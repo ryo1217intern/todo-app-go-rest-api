@@ -10,38 +10,33 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-//IUserControllerはUserControllerのインターフェース
 type IUserController interface {
-	SingUp(c echo.Context) error
+	SignUp(c echo.Context) error
 	LogIn(c echo.Context) error
 	LogOut(c echo.Context) error
 }
 
-//UserControllerはユーザーのリクエストを処理する
-type UserController struct {
+type userController struct {
 	uu usecase.IUserUsecase
 }
 
-//NewUserControllerはUserControllerのポインタを返す
 func NewUserController(uu usecase.IUserUsecase) IUserController {
-	return &UserController{uu}
+	return &userController{uu}
 }
 
-//SingUpはユーザー登録を行う
-func (uc *UserController) SingUp(c echo.Context) error {
+func (uc *userController) SignUp(c echo.Context) error {
 	user := model.User{}
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 	userRes, err := uc.uu.SignUp(user)
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(http.StatusOK, userRes)
+	return c.JSON(http.StatusCreated, userRes)
 }
 
-func (uc *UserController) LogIn(c echo.Context) error {
+func (uc *userController) LogIn(c echo.Context) error {
 	user := model.User{}
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -56,10 +51,23 @@ func (uc *UserController) LogIn(c echo.Context) error {
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.Path = "/"
 	cookie.Domain = os.Getenv("API_DOMAIN")
+	// cookie.Secure = true
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteNoneMode
 	c.SetCookie(cookie)
+	return c.NoContent(http.StatusOK)
 }
 
-func (uc *UserController) LogOut(c echo.Context) error {
+func (uc *userController) LogOut(c echo.Context) error {
+	cookie := new(http.Cookie)
+	cookie.Name = "token"
+	cookie.Value = ""
+	cookie.Expires = time.Now()
+	cookie.Path = "/"
+	cookie.Domain = os.Getenv("API_DOMAIN")
+	// cookie.Secure = true
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteNoneMode
+	c.SetCookie(cookie)
+	return c.NoContent(http.StatusOK)
 }
