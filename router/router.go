@@ -32,6 +32,8 @@ func NewRouter(uc controller.IUserController, tc controller.ITaskController) *ec
 	e.POST("/login", uc.LogIn)
 	e.POST("/logout", uc.LogOut)
 
+	e.GET("/csrf", uc.CsrfToken)
+
 	t := e.Group("/tasks")
 	t.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey:  []byte(os.Getenv("SECRET")),
